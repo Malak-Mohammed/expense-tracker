@@ -1,6 +1,10 @@
 package com.malak.expense_tracker.service.impl;
 
 import com.malak.expense_tracker.dto.ExpenseDTO;
+import com.malak.expense_tracker.exception.ExpenseNotFoundException;
+import com.malak.expense_tracker.exception.UserNotFoundException;
+import com.malak.expense_tracker.exception.CategoryNotFoundException;
+import com.malak.expense_tracker.exception.InvalidExpenseException;
 import com.malak.expense_tracker.mapper.ExpenseMapper;
 import com.malak.expense_tracker.model.Category;
 import com.malak.expense_tracker.model.Expense;
@@ -37,9 +41,9 @@ public class ExpenseServiceImpl implements ExpenseService {
         validateExpense(dto);
 
         User user = userRepository.findById(dto.userId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + dto.userId()));
         Category category = categoryRepository.findById(dto.categoryId())
-                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found with ID: " + dto.categoryId()));
 
         Expense expense = ExpenseMapper.toEntity(dto, user, category);
         Expense saved = expenseRepository.save(expense);
@@ -49,14 +53,14 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     public ExpenseDTO updateExpense(Long expenseId, ExpenseDTO dto) {
         Expense existing = expenseRepository.findById(expenseId)
-                .orElseThrow(() -> new IllegalArgumentException("Expense not found"));
+                .orElseThrow(() -> new ExpenseNotFoundException("Expense not found with ID: " + expenseId));
 
         validateExpense(dto);
 
         User user = userRepository.findById(dto.userId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + dto.userId()));
         Category category = categoryRepository.findById(dto.categoryId())
-                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found with ID: " + dto.categoryId()));
 
         existing.setExpenseAmount(dto.expenseAmount());
         existing.setExpenseDate(dto.expenseDate());
@@ -71,7 +75,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     public void deleteExpense(Long expenseId) {
         if (!expenseRepository.existsById(expenseId)) {
-            throw new IllegalArgumentException("Expense not found");
+            throw new ExpenseNotFoundException("Expense not found with ID: " + expenseId);
         }
         expenseRepository.deleteById(expenseId);
     }
@@ -126,10 +130,10 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     private void validateExpense(ExpenseDTO dto) {
         if (dto.expenseAmount() == null || dto.expenseAmount() <= 0) {
-            throw new IllegalArgumentException("Expense amount must be positive");
+            throw new InvalidExpenseException("Expense amount must be positive");
         }
         if (dto.expenseDate() == null || dto.expenseDate().isAfter(LocalDate.now())) {
-            throw new IllegalArgumentException("Expense date cannot be in the future");
+            throw new InvalidExpenseException("Expense date cannot be in the future");
         }
     }
 }

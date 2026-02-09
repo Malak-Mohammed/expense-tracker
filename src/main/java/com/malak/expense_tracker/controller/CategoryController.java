@@ -1,8 +1,8 @@
 package com.malak.expense_tracker.controller;
 
 import com.malak.expense_tracker.dto.CategoryDTO;
+import com.malak.expense_tracker.response.ApiResponse;
 import com.malak.expense_tracker.service.CategoryService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,44 +15,41 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
-    @Autowired
     public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
     }
 
-    // Create Category
     @PostMapping
-    public ResponseEntity<CategoryDTO> addCategory(@RequestBody CategoryDTO categoryDTO) {
-        CategoryDTO savedCategory = categoryService.addCategory(categoryDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedCategory);
+    public ResponseEntity<ApiResponse<CategoryDTO>> addCategory(@RequestBody CategoryDTO dto) {
+        CategoryDTO savedCategory = categoryService.addCategory(dto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, "Category added successfully", savedCategory));
     }
 
-    // Get Category by Name
-    @GetMapping("/name/{categoryName}")
-    public ResponseEntity<CategoryDTO> getCategoryByName(@PathVariable String categoryName) {
+    @GetMapping("/{categoryName}")
+    public ResponseEntity<ApiResponse<CategoryDTO>> getCategoryByName(@PathVariable String categoryName) {
         return categoryService.findByCategoryName(categoryName)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .map(category -> ResponseEntity.ok(new ApiResponse<>(true, "Category found", category)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(false, "Category not found", null)));
     }
 
-    // Update Category
     @PutMapping("/{categoryId}")
-    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Long categoryId,
-                                                      @RequestBody CategoryDTO updatedCategoryDTO) {
-        CategoryDTO savedCategory = categoryService.updateCategory(categoryId, updatedCategoryDTO);
-        return ResponseEntity.ok(savedCategory);
+    public ResponseEntity<ApiResponse<CategoryDTO>> updateCategory(@PathVariable Long categoryId,
+                                                                   @RequestBody CategoryDTO dto) {
+        CategoryDTO updatedCategory = categoryService.updateCategory(categoryId, dto);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Category updated successfully", updatedCategory));
     }
 
-    // Delete Category
     @DeleteMapping("/{categoryId}")
-    public ResponseEntity<Void> deleteCategory(@PathVariable Long categoryId) {
+    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable Long categoryId) {
         categoryService.deleteCategory(categoryId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new ApiResponse<>(true, "Category deleted successfully", null));
     }
 
-    // Get All Categories
     @GetMapping
-    public ResponseEntity<List<CategoryDTO>> getAllCategories() {
-        return ResponseEntity.ok(categoryService.getAllCategories());
+    public ResponseEntity<ApiResponse<List<CategoryDTO>>> getAllCategories() {
+        List<CategoryDTO> categories = categoryService.getAllCategories();
+        return ResponseEntity.ok(new ApiResponse<>(true, "Categories retrieved successfully", categories));
     }
 }

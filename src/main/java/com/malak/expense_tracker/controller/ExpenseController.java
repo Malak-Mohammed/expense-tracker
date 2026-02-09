@@ -1,8 +1,8 @@
 package com.malak.expense_tracker.controller;
 
 import com.malak.expense_tracker.dto.ExpenseDTO;
+import com.malak.expense_tracker.response.ApiResponse;
 import com.malak.expense_tracker.service.ExpenseService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,71 +17,77 @@ public class ExpenseController {
 
     private final ExpenseService expenseService;
 
-    @Autowired
     public ExpenseController(ExpenseService expenseService) {
         this.expenseService = expenseService;
     }
 
-    // Create Expense
+
     @PostMapping
-    public ResponseEntity<ExpenseDTO> addExpense(@RequestBody ExpenseDTO expenseDTO) {
-        ExpenseDTO savedExpense = expenseService.addExpense(expenseDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedExpense);
+    public ResponseEntity<ApiResponse<ExpenseDTO>> addExpense(@RequestBody ExpenseDTO dto) {
+        ExpenseDTO savedExpense = expenseService.addExpense(dto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, "Expense added successfully", savedExpense));
     }
 
-    // Update Expense
+
     @PutMapping("/{expenseId}")
-    public ResponseEntity<ExpenseDTO> updateExpense(@PathVariable Long expenseId,
-                                                    @RequestBody ExpenseDTO expenseDTO) {
-        ExpenseDTO savedExpense = expenseService.updateExpense(expenseId, expenseDTO);
-        return ResponseEntity.ok(savedExpense);
+    public ResponseEntity<ApiResponse<ExpenseDTO>> updateExpense(@PathVariable Long expenseId,
+                                                                 @RequestBody ExpenseDTO dto) {
+        ExpenseDTO updatedExpense = expenseService.updateExpense(expenseId, dto);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Expense updated successfully", updatedExpense));
     }
 
-    // Get Expense by ID
-    @GetMapping("/{expenseId}")
-    public ResponseEntity<ExpenseDTO> getExpense(@PathVariable Long expenseId) {
-        return expenseService.getExpenseById(expenseId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
 
-    // Delete Expense
     @DeleteMapping("/{expenseId}")
-    public ResponseEntity<Void> deleteExpense(@PathVariable Long expenseId) {
+    public ResponseEntity<ApiResponse<Void>> deleteExpense(@PathVariable Long expenseId) {
         expenseService.deleteExpense(expenseId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new ApiResponse<>(true, "Expense deleted successfully", null));
     }
 
-    // Get Expenses by User
+
+    @GetMapping("/{expenseId}")
+    public ResponseEntity<ApiResponse<ExpenseDTO>> getExpenseById(@PathVariable Long expenseId) {
+        return expenseService.getExpenseById(expenseId)
+                .map(expense -> ResponseEntity.ok(new ApiResponse<>(true, "Expense found", expense)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(false, "Expense not found", null)));
+    }
+
+
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ExpenseDTO>> getExpensesByUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(expenseService.getExpensesByUser(userId));
+    public ResponseEntity<ApiResponse<List<ExpenseDTO>>> getExpensesByUser(@PathVariable Long userId) {
+        List<ExpenseDTO> expenses = expenseService.getExpensesByUser(userId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Expenses retrieved successfully", expenses));
     }
 
-    // Get Expenses by Category
+
     @GetMapping("/category/{categoryId}")
-    public ResponseEntity<List<ExpenseDTO>> getExpensesByCategory(@PathVariable Long categoryId) {
-        return ResponseEntity.ok(expenseService.getExpensesByCategory(categoryId));
+    public ResponseEntity<ApiResponse<List<ExpenseDTO>>> getExpensesByCategory(@PathVariable Long categoryId) {
+        List<ExpenseDTO> expenses = expenseService.getExpensesByCategory(categoryId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Expenses retrieved successfully", expenses));
     }
 
-    // Get Expenses Between Dates
+
     @GetMapping("/user/{userId}/between")
-    public ResponseEntity<List<ExpenseDTO>> getExpensesBetweenDates(
+    public ResponseEntity<ApiResponse<List<ExpenseDTO>>> getExpensesBetweenDates(
             @PathVariable Long userId,
             @RequestParam LocalDate start,
             @RequestParam LocalDate end) {
-        return ResponseEntity.ok(expenseService.getExpensesBetweenDates(userId, start, end));
+        List<ExpenseDTO> expenses = expenseService.getExpensesBetweenDates(userId, start, end);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Expenses retrieved successfully", expenses));
     }
 
-    // Get Total Expenses by User
+
     @GetMapping("/user/{userId}/total")
-    public ResponseEntity<Double> getTotalExpensesByUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(expenseService.getTotalExpensesByUser(userId));
+    public ResponseEntity<ApiResponse<Double>> getTotalExpensesByUser(@PathVariable Long userId) {
+        Double total = expenseService.getTotalExpensesByUser(userId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Total expenses calculated successfully", total));
     }
 
-    // Get Monthly Expense Summary
+
     @GetMapping("/user/{userId}/summary")
-    public ResponseEntity<Map<String, Double>> getMonthlyExpenseSummary(@PathVariable Long userId) {
-        return ResponseEntity.ok(expenseService.getMonthlyExpenseSummary(userId));
+    public ResponseEntity<ApiResponse<Map<String, Double>>> getMonthlyExpenseSummary(@PathVariable Long userId) {
+        Map<String, Double> summary = expenseService.getMonthlyExpenseSummary(userId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Monthly summary retrieved successfully", summary));
     }
 }

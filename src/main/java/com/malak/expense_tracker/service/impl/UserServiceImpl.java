@@ -1,6 +1,9 @@
 package com.malak.expense_tracker.service.impl;
 
 import com.malak.expense_tracker.dto.UserDTO;
+import com.malak.expense_tracker.exception.UserNotFoundException;
+import com.malak.expense_tracker.exception.DuplicateEmailException;
+import com.malak.expense_tracker.exception.DuplicateUsernameException;
 import com.malak.expense_tracker.mapper.UserMapper;
 import com.malak.expense_tracker.model.User;
 import com.malak.expense_tracker.repository.UserRepository;
@@ -23,10 +26,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO registerUser(User user) {
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email already in use");
+            throw new DuplicateEmailException("Email already in use");
         }
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            throw new IllegalArgumentException("Username already in use");
+            throw new DuplicateUsernameException("Username already in use");
         }
         User savedUser = userRepository.save(user);
         return UserMapper.toDto(savedUser);
@@ -55,18 +58,18 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO updateUser(Long userId, User updatedUser) {
         User existing = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
 
         userRepository.findByEmail(updatedUser.getEmail())
                 .filter(user -> !user.getUserId().equals(userId))
                 .ifPresent(user -> {
-                    throw new IllegalArgumentException("Email already in use by another user");
+                    throw new DuplicateEmailException("Email already in use by another user");
                 });
 
         userRepository.findByUsername(updatedUser.getUsername())
                 .filter(user -> !user.getUserId().equals(userId))
                 .ifPresent(user -> {
-                    throw new IllegalArgumentException("Username already in use by another user");
+                    throw new DuplicateUsernameException("Username already in use by another user");
                 });
 
         existing.setEmail(updatedUser.getEmail());
@@ -79,7 +82,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void deleteUser(Long userId) {
         if (!userRepository.existsById(userId)) {
-            throw new IllegalArgumentException("User not found");
+            throw new UserNotFoundException("User not found with ID: " + userId);
         }
         userRepository.deleteById(userId);
     }

@@ -2,8 +2,8 @@ package com.malak.expense_tracker.controller;
 
 import com.malak.expense_tracker.dto.UserDTO;
 import com.malak.expense_tracker.model.User;
+import com.malak.expense_tracker.response.ApiResponse;
 import com.malak.expense_tracker.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,51 +15,55 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
-    @Autowired
+
     public UserController(UserService userService) {
         this.userService = userService;
     }
 
-    // Register User
+
     @PostMapping
-    public ResponseEntity<UserDTO> addUser(@RequestBody User user) {
+    public ResponseEntity<ApiResponse<UserDTO>> registerUser(@RequestBody User user) {
         UserDTO savedUser = userService.registerUser(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, "User registered successfully", savedUser));
     }
 
-    // Get User by Email
+
     @GetMapping("/email/{email}")
-    public ResponseEntity<UserDTO> getUserByEmail(@PathVariable String email) {
+    public ResponseEntity<ApiResponse<UserDTO>> getUserByEmail(@PathVariable String email) {
         return userService.findByEmail(email)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .map(user -> ResponseEntity.ok(new ApiResponse<>(true, "User found", user)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(false, "User not found", null)));
     }
 
-    // Get User by Username
+
     @GetMapping("/username/{username}")
-    public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String username) {
+    public ResponseEntity<ApiResponse<UserDTO>> getUserByUsername(@PathVariable String username) {
         return userService.findByUsername(username)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .map(user -> ResponseEntity.ok(new ApiResponse<>(true, "User found", user)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(false, "User not found", null)));
     }
 
-    // Update User
+
     @PutMapping("/{userId}")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Long userId, @RequestBody User updatedUser) {
+    public ResponseEntity<ApiResponse<UserDTO>> updateUser(@PathVariable Long userId, @RequestBody User updatedUser) {
         UserDTO savedUser = userService.updateUser(userId, updatedUser);
-        return ResponseEntity.ok(savedUser);
+        return ResponseEntity.ok(new ApiResponse<>(true, "User updated successfully", savedUser));
     }
 
-    // Delete User
+
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long userId) {
         userService.deleteUser(userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new ApiResponse<>(true, "User deleted successfully", null));
     }
 
-    // Get All Users
+
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<ApiResponse<List<UserDTO>>> getAllUsers() {
+        List<UserDTO> users = userService.getAllUsers();
+        return ResponseEntity.ok(new ApiResponse<>(true, "Users retrieved successfully", users));
     }
 }

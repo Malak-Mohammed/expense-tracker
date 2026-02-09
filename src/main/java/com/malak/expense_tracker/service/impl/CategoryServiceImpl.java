@@ -1,6 +1,8 @@
 package com.malak.expense_tracker.service.impl;
 
 import com.malak.expense_tracker.dto.CategoryDTO;
+import com.malak.expense_tracker.exception.CategoryAlreadyExistsException;
+import com.malak.expense_tracker.exception.CategoryNotFoundException;
 import com.malak.expense_tracker.mapper.CategoryMapper;
 import com.malak.expense_tracker.model.Category;
 import com.malak.expense_tracker.repository.CategoryRepository;
@@ -23,7 +25,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDTO addCategory(CategoryDTO dto) {
         if (categoryRepository.findByCategoryName(dto.categoryName()).isPresent()) {
-            throw new IllegalArgumentException("Category already exists");
+            throw new CategoryAlreadyExistsException("Category already exists: " + dto.categoryName());
         }
         Category category = CategoryMapper.toEntity(dto);
         Category saved = categoryRepository.save(category);
@@ -44,7 +46,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDTO updateCategory(Long categoryId, CategoryDTO dto) {
         Category existing = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found with ID: " + categoryId));
 
         existing.setCategoryName(dto.categoryName());
 
@@ -55,7 +57,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void deleteCategory(Long categoryId) {
         if (!categoryRepository.existsById(categoryId)) {
-            throw new IllegalArgumentException("Category not found");
+            throw new CategoryNotFoundException("Category not found with ID: " + categoryId);
         }
         categoryRepository.deleteById(categoryId);
     }
