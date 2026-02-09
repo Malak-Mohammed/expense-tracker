@@ -1,34 +1,39 @@
 package com.malak.expense_tracker.service.impl;
 
+import com.malak.expense_tracker.dto.CategoryDTO;
+import com.malak.expense_tracker.mapper.CategoryMapper;
 import com.malak.expense_tracker.model.Category;
 import com.malak.expense_tracker.repository.CategoryRepository;
 import com.malak.expense_tracker.service.CategoryService;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+@Service
 public class CategoryServiceImpl implements CategoryService {
 
-   private final CategoryRepository categoryRepository;
+    private final CategoryRepository categoryRepository;
 
     public CategoryServiceImpl(CategoryRepository categoryRepository) {
         this.categoryRepository = categoryRepository;
     }
 
-
     @Override
-    public Category addCategory(Category category) {
-        if (categoryRepository.findByCategoryName(category.getCategoryName()).isPresent()) {
+    public CategoryDTO addCategory(CategoryDTO dto) {
+        if (categoryRepository.findByCategoryName(dto.categoryName()).isPresent()) {
             throw new IllegalArgumentException("Category already exists");
         }
-        return categoryRepository.save(category);
-
+        Category category = CategoryMapper.toEntity(dto);
+        Category saved = categoryRepository.save(category);
+        return CategoryMapper.toDto(saved);
     }
 
     @Override
-    public Optional<Category> findByCategoryName(String categoryName) {
-        return categoryRepository.findByCategoryName(categoryName);
-
+    public Optional<CategoryDTO> findByCategoryName(String categoryName) {
+        return categoryRepository.findByCategoryName(categoryName)
+                .map(CategoryMapper::toDto);
     }
 
     @Override
@@ -37,14 +42,14 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public Category updateCategory(Long categoryId, Category updatedCategory) {
+    public CategoryDTO updateCategory(Long categoryId, CategoryDTO dto) {
         Category existing = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("Category not found"));
 
-        existing.setCategoryName(updatedCategory.getCategoryName());
+        existing.setCategoryName(dto.categoryName());
 
-
-        return categoryRepository.save(existing);
+        Category saved = categoryRepository.save(existing);
+        return CategoryMapper.toDto(saved);
     }
 
     @Override
@@ -56,7 +61,10 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+    public List<CategoryDTO> getAllCategories() {
+        return categoryRepository.findAll()
+                .stream()
+                .map(CategoryMapper::toDto)
+                .collect(Collectors.toList());
     }
 }

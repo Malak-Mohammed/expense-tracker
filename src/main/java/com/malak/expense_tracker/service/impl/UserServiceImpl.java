@@ -1,13 +1,15 @@
 package com.malak.expense_tracker.service.impl;
 
+import com.malak.expense_tracker.dto.UserDTO;
+import com.malak.expense_tracker.mapper.UserMapper;
 import com.malak.expense_tracker.model.User;
 import com.malak.expense_tracker.repository.UserRepository;
 import com.malak.expense_tracker.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -19,22 +21,25 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User registerUser(User user) {
+    public UserDTO registerUser(User user) {
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Email already in use");
         }
-        return userRepository.save(user);
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            throw new IllegalArgumentException("Username already in use");
+        }
+        User savedUser = userRepository.save(user);
+        return UserMapper.toDto(savedUser);
     }
 
     @Override
-    public Optional<User> findByUsername(String username) {
-        return userRepository.findByUsername(username);
+    public Optional<UserDTO> findByUsername(String username) {
+        return userRepository.findByUsername(username).map(UserMapper::toDto);
     }
 
     @Override
-    public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
-
+    public Optional<UserDTO> findByEmail(String email) {
+        return userRepository.findByEmail(email).map(UserMapper::toDto);
     }
 
     @Override
@@ -48,10 +53,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updateUser(Long userId, User updatedUser) {
+    public UserDTO updateUser(Long userId, User updatedUser) {
         User existing = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
 
         userRepository.findByEmail(updatedUser.getEmail())
                 .filter(user -> !user.getUserId().equals(userId))
@@ -59,18 +63,17 @@ public class UserServiceImpl implements UserService {
                     throw new IllegalArgumentException("Email already in use by another user");
                 });
 
-
         userRepository.findByUsername(updatedUser.getUsername())
                 .filter(user -> !user.getUserId().equals(userId))
                 .ifPresent(user -> {
                     throw new IllegalArgumentException("Username already in use by another user");
                 });
 
-
         existing.setEmail(updatedUser.getEmail());
         existing.setUsername(updatedUser.getUsername());
 
-        return userRepository.save(existing);
+        User savedUser = userRepository.save(existing);
+        return UserMapper.toDto(savedUser);
     }
 
     @Override
@@ -82,9 +85,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserDTO> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(UserMapper::toDto)
+                .collect(Collectors.toList());
     }
-
-
 }
