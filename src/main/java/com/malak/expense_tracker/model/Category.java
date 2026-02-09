@@ -11,36 +11,36 @@ public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long categoryId;
 
     @NotNull
-    private String name;
+    private String categoryName;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
     private List<Expense> expenses;
 
     public Category() {}
 
-    public Category(Long id, String name, List<Expense> expenses) {
-        this.id = id;
-        this.name = name;
+    public Category(Long categoryId, String categoryName, List<Expense> expenses) {
+        this.categoryId = categoryId;
+        this.categoryName = categoryName;
         this.expenses = expenses;
     }
 
-    public Long getId() {
-        return id;
+    public Long getCategoryId() {
+        return categoryId;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
     }
 
-    public String getName() {
-        return name;
+    public String getCategoryName() {
+        return categoryName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
     }
 
     public List<Expense> getExpenses() {

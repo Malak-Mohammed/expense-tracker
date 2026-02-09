@@ -4,8 +4,6 @@ package com.malak.expense_tracker.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
@@ -15,15 +13,15 @@ public class Expense {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long expenseId;
 
     @Positive
-    private Double amount;
+    private Double expenseAmount;
 
     @NotNull
-    private LocalDate date;
+    private LocalDate expenseDate;
 
-    private String description;
+    private String expenseDescription;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -36,45 +34,45 @@ public class Expense {
 
     public Expense() {
     }
-    public Expense(Long id, Double amount, LocalDate date, String description, User user, Category category) {
-        this.id = id;
-        this.amount = amount;
-        this.date = date;
-        this.description = description;
+    public Expense(Long expenseId, Double expenseAmount, LocalDate expenseDate, String expenseDescription, User user, Category category) {
+        this.expenseId = expenseId;
+        this.expenseAmount = expenseAmount;
+        this.expenseDate = expenseDate;
+        this.expenseDescription = expenseDescription;
         this.user = user;
         this.category = category;
     }
 
-    public Long getId() {
-        return id;
+    public Long getExpenseId() {
+        return expenseId;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setExpenseId(Long expenseId) {
+        this.expenseId = expenseId;
     }
 
-    public Double getAmount() {
-        return amount;
+    public Double getExpenseAmount() {
+        return expenseAmount;
     }
 
-    public void setAmount(Double amount) {
-        this.amount = amount;
+    public void setExpenseAmount(Double expenseAmount) {
+        this.expenseAmount = expenseAmount;
     }
 
-    public LocalDate getDate() {
-        return date;
+    public LocalDate getExpenseDate() {
+        return expenseDate;
     }
 
-    public void setDate(LocalDate date) {
-        this.date = date;
+    public void setExpenseDate(LocalDate date) {
+        this.expenseDate = date;
     }
 
-    public String getDescription() {
-        return description;
+    public String getExpenseDescription() {
+        return expenseDescription;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setExpenseDescription(String expenseDescription) {
+        this.expenseDescription = expenseDescription;
     }
 
     public User getUser() {
