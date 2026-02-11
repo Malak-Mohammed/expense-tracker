@@ -1,6 +1,6 @@
 package com.malak.expense_tracker.exception;
 
-public class CategoryAlreadyExistsException extends RuntimeException {
+public class CategoryAlreadyExistsException extends ApiException {
     public CategoryAlreadyExistsException(String message) {
         super(message);
     }

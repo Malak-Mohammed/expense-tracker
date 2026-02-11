@@ -7,15 +7,21 @@ import java.util.Optional;
 
 public interface CategoryService {
 
+
     CategoryDTO addCategory(CategoryDTO categoryDTO);
+
 
     Optional<CategoryDTO> findByCategoryName(String categoryName);
 
+
     boolean existsByCategoryName(String categoryName);
+
 
     CategoryDTO updateCategory(Long categoryId, CategoryDTO updatedCategoryDTO);
 
+
     void deleteCategory(Long categoryId);
+
 
     List<CategoryDTO> getAllCategories();
 }

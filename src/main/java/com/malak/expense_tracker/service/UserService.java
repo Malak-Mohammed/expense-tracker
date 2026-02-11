@@ -1,14 +1,15 @@
 package com.malak.expense_tracker.service;
 
+import com.malak.expense_tracker.dto.RegisterRequest;
 import com.malak.expense_tracker.dto.UserDTO;
-import com.malak.expense_tracker.model.User;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface UserService {
 
-    UserDTO registerUser(User user);
+
+    UserDTO registerUser(RegisterRequest request);
 
     Optional<UserDTO> findByUsername(String username);
 
@@ -18,7 +19,7 @@ public interface UserService {
 
     boolean existsByUsername(String username);
 
-    UserDTO updateUser(Long userId, User updatedUser);
+    UserDTO updateUser(Long userId, UserDTO updatedUser);
 
     void deleteUser(Long userId);
 

@@ -1,6 +1,6 @@
 package com.malak.expense_tracker.exception;
 
-public class ExpenseNotFoundException extends RuntimeException {
+public class ExpenseNotFoundException extends ApiException {
     public ExpenseNotFoundException(String message) {
         super(message);
     }

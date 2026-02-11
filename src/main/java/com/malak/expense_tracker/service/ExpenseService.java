@@ -9,21 +9,30 @@ import java.util.Optional;
 
 public interface ExpenseService {
 
-    ExpenseDTO addExpense(ExpenseDTO expenseDTO);
 
-    ExpenseDTO updateExpense(Long expenseId, ExpenseDTO updatedExpenseDTO);
+    ExpenseDTO addExpense(ExpenseDTO expenseDTO, String username);
 
-    void deleteExpense(Long expenseId);
 
-    Optional<ExpenseDTO> getExpenseById(Long expenseId);
+    ExpenseDTO updateExpense(Long expenseId, ExpenseDTO updatedExpenseDTO, String username);
 
-    List<ExpenseDTO> getExpensesByUser(Long userId);
 
-    List<ExpenseDTO> getExpensesByCategory(Long categoryId);
+    void deleteExpense(Long expenseId, String username);
 
-    List<ExpenseDTO> getExpensesBetweenDates(Long userId, LocalDate start, LocalDate end);
 
-    Double getTotalExpensesByUser(Long userId);
+    Optional<ExpenseDTO> getExpenseById(Long expenseId, String username);
 
-    Map<String, Double> getMonthlyExpenseSummary(Long userId);
+
+    List<ExpenseDTO> getExpensesByUsername(String username);
+
+
+    List<ExpenseDTO> getExpensesByCategory(Long categoryId, String username);
+
+
+    List<ExpenseDTO> getExpensesBetweenDates(String username, LocalDate start, LocalDate end);
+
+
+    Double getTotalExpensesByUsername(String username);
+
+
+    Map<String, Double> getMonthlyExpenseSummary(String username);
 }

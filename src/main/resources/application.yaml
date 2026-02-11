@@ -11,3 +11,7 @@ spring:
   #jpa Settings
   jpa.hibernate.ddl_auto: create
 
+
+jwt:
+    secret: VWzZpjBOdL464y4Q4WgrdBffl74FKJlPid7lfpEDbT4=
+    expiration: 86400000

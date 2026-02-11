@@ -37,11 +37,11 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
-    public ExpenseDTO addExpense(ExpenseDTO dto) {
+    public ExpenseDTO addExpense(ExpenseDTO dto, String username) {
         validateExpense(dto);
 
-        User user = userRepository.findById(dto.userId())
-                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + dto.userId()));
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
         Category category = categoryRepository.findById(dto.categoryId())
                 .orElseThrow(() -> new CategoryNotFoundException("Category not found with ID: " + dto.categoryId()));
 
@@ -51,14 +51,14 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
-    public ExpenseDTO updateExpense(Long expenseId, ExpenseDTO dto) {
+    public ExpenseDTO updateExpense(Long expenseId, ExpenseDTO dto, String username) {
         Expense existing = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new ExpenseNotFoundException("Expense not found with ID: " + expenseId));
 
         validateExpense(dto);
 
-        User user = userRepository.findById(dto.userId())
-                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + dto.userId()));
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
         Category category = categoryRepository.findById(dto.categoryId())
                 .orElseThrow(() -> new CategoryNotFoundException("Category not found with ID: " + dto.categoryId()));
 
@@ -73,53 +73,67 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
-    public void deleteExpense(Long expenseId) {
-        if (!expenseRepository.existsById(expenseId)) {
-            throw new ExpenseNotFoundException("Expense not found with ID: " + expenseId);
+    public void deleteExpense(Long expenseId, String username) {
+        Expense existing = expenseRepository.findById(expenseId)
+                .orElseThrow(() -> new ExpenseNotFoundException("Expense not found with ID: " + expenseId));
+
+        if (!existing.getUser().getUsername().equals(username)) {
+            throw new ExpenseNotFoundException("Expense not found for user: " + username);
         }
-        expenseRepository.deleteById(expenseId);
+
+        expenseRepository.delete(existing);
     }
 
     @Override
-    public Optional<ExpenseDTO> getExpenseById(Long expenseId) {
-        return expenseRepository.findById(expenseId).map(ExpenseMapper::toDto);
+    public Optional<ExpenseDTO> getExpenseById(Long expenseId, String username) {
+        return expenseRepository.findById(expenseId)
+                .filter(exp -> exp.getUser().getUsername().equals(username))
+                .map(ExpenseMapper::toDto);
     }
 
     @Override
-    public List<ExpenseDTO> getExpensesByUser(Long userId) {
-        return expenseRepository.findByUserUserId(userId)
+    public List<ExpenseDTO> getExpensesByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+        return expenseRepository.findByUser(user)
                 .stream()
                 .map(ExpenseMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<ExpenseDTO> getExpensesByCategory(Long categoryId) {
-        return expenseRepository.findByCategoryCategoryId(categoryId)
+    public List<ExpenseDTO> getExpensesByCategory(Long categoryId, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+        return expenseRepository.findByCategoryCategoryIdAndUser(categoryId, user)
                 .stream()
                 .map(ExpenseMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<ExpenseDTO> getExpensesBetweenDates(Long userId, LocalDate start, LocalDate end) {
-        return expenseRepository.findAll().stream()
-                .filter(exp -> exp.getUser().getUserId().equals(userId))
-                .filter(exp -> !exp.getExpenseDate().isBefore(start) && !exp.getExpenseDate().isAfter(end))
+    public List<ExpenseDTO> getExpensesBetweenDates(String username, LocalDate start, LocalDate end) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+        return expenseRepository.findByUserAndExpenseDateBetween(user, start, end)
+                .stream()
                 .map(ExpenseMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Double getTotalExpensesByUser(Long userId) {
-        return getExpensesByUser(userId).stream()
+    public Double getTotalExpensesByUsername(String username) {
+        return getExpensesByUsername(username).stream()
                 .mapToDouble(ExpenseDTO::expenseAmount)
                 .sum();
     }
 
     @Override
-    public Map<String, Double> getMonthlyExpenseSummary(Long userId) {
-        List<Expense> expenses = expenseRepository.findByUserUserId(userId);
+    public Map<String, Double> getMonthlyExpenseSummary(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+
+        List<Expense> expenses = expenseRepository.findByUser(user);
 
         return expenses.stream()
                 .collect(Collectors.groupingBy(
@@ -129,7 +143,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     private void validateExpense(ExpenseDTO dto) {
-        if (dto.expenseAmount() == null || dto.expenseAmount() <= 0) {
+        if (dto.expenseAmount() == null || dto.expenseAmount() < 0) {
             throw new InvalidExpenseException("Expense amount must be positive");
         }
         if (dto.expenseDate() == null || dto.expenseDate().isAfter(LocalDate.now())) {

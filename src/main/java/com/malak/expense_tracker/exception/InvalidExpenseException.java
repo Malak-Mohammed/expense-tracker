@@ -1,6 +1,6 @@
 package com.malak.expense_tracker.exception;
 
-public class InvalidExpenseException extends RuntimeException {
+public class InvalidExpenseException extends ApiException {
     public InvalidExpenseException(String message) {
         super(message);
     }

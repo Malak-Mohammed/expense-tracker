@@ -24,7 +24,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDTO addCategory(CategoryDTO dto) {
-        if (categoryRepository.findByCategoryName(dto.categoryName()).isPresent()) {
+        if (categoryRepository.existsByCategoryName(dto.categoryName())) {
             throw new CategoryAlreadyExistsException("Category already exists: " + dto.categoryName());
         }
         Category category = CategoryMapper.toEntity(dto);
@@ -40,7 +40,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public boolean existsByCategoryName(String categoryName) {
-        return categoryRepository.findByCategoryName(categoryName).isPresent();
+        return categoryRepository.existsByCategoryName(categoryName);
     }
 
     @Override
@@ -48,8 +48,13 @@ public class CategoryServiceImpl implements CategoryService {
         Category existing = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new CategoryNotFoundException("Category not found with ID: " + categoryId));
 
-        existing.setCategoryName(dto.categoryName());
+        // Prevent duplicate category names
+        if (categoryRepository.existsByCategoryName(dto.categoryName())
+                && !existing.getCategoryName().equalsIgnoreCase(dto.categoryName())) {
+            throw new CategoryAlreadyExistsException("Category already exists: " + dto.categoryName());
+        }
 
+        existing.setCategoryName(dto.categoryName());
         Category saved = categoryRepository.save(existing);
         return CategoryMapper.toDto(saved);
     }
