@@ -10,7 +10,7 @@ A secure expense tracking platform built with Spring Boot, Hibernate, and MySQL.
 - Dockerized deployment
 
 ## Tech Stack
-- Java 17
+- Java 21
 - Spring Boot
 - Hibernate / JPA
 - MySQL
