@@ -35,13 +35,11 @@ public class User {
     )
     private Set<Role> roles = new HashSet<>();
 
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Expense> expenses;
 
-
-    public User() {
-    }
+    // --- Constructors ---
+    public User() {}
     public User(Long userId, String username, String email, String password) {
         this.userId = userId;
         this.username = username;
@@ -49,51 +47,27 @@ public class User {
         this.password = password;
     }
 
-    public Long getUserId() {
-        return userId;
-    }
+    // --- Getters & Setters ---
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
-    public String getUsername() {
-        return username;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
-    public String getEmail() {
-        return email;
-    }
+    public Set<Role> getRoles() { return roles; }
+    public void setRoles(Set<Role> roles) { this.roles = roles; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public List<Expense> getExpenses() { return expenses; }
+    public void setExpenses(List<Expense> expenses) { this.expenses = expenses; }
 
-    public String getPassword() {
-        return password;
-    }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public Set<Role> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
-    }
-
-    public List<Expense> getExpenses() {
-        return expenses;
-    }
-
-    public void setExpenses(List<Expense> expenses) {
-        this.expenses = expenses;
+    public boolean hasRole(String roleName) {
+        return roles.stream().anyMatch(role -> roleName.equals(role.getRoleName()));
     }
 }

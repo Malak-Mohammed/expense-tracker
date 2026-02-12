@@ -5,8 +5,8 @@ import com.malak.expense_tracker.dto.CategoryDTO;
 import java.util.List;
 import java.util.Optional;
 
-public interface CategoryService {
 
+public interface CategoryService {
 
     CategoryDTO addCategory(CategoryDTO categoryDTO);
 
@@ -16,12 +16,9 @@ public interface CategoryService {
 
     boolean existsByCategoryName(String categoryName);
 
-
     CategoryDTO updateCategory(Long categoryId, CategoryDTO updatedCategoryDTO);
 
 
-    void deleteCategory(Long categoryId);
-
-
-    List<CategoryDTO> getAllCategories();
+    void deleteCategory(Long categoryId, String username);   // updated
+    List<CategoryDTO> getAllCategories(String username);
 }

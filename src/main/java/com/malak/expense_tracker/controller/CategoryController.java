@@ -5,6 +5,7 @@ import com.malak.expense_tracker.response.ApiResponse;
 import com.malak.expense_tracker.service.CategoryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,36 +21,48 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CategoryDTO>> addCategory(@RequestBody CategoryDTO dto) {
-        CategoryDTO savedCategory = categoryService.addCategory(dto);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse<>(true, "Category added successfully", savedCategory, HttpStatus.CREATED.value()));
+    public ResponseEntity<ApiResponse<CategoryDTO>> addCategory(@RequestBody CategoryDTO dto, Authentication auth) {
+        // Inject logged-in user as owner
+        CategoryDTO savedCategory = categoryService.addCategory(
+                new CategoryDTO(dto.categoryId(), dto.categoryName(), auth.getName())
+        );
+        return buildResponse(true, "Category added successfully", savedCategory, HttpStatus.CREATED);
     }
 
     @GetMapping("/name/{categoryName}")
     public ResponseEntity<ApiResponse<CategoryDTO>> getCategoryByName(@PathVariable String categoryName) {
         return categoryService.findByCategoryName(categoryName)
-                .map(category -> ResponseEntity.ok(new ApiResponse<>(true, "Category found", category, HttpStatus.OK.value())))
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse<>(false, "Category not found", null, HttpStatus.NOT_FOUND.value())));
+                .map(category -> buildResponse(true, "Category found", category, HttpStatus.OK))
+                .orElse(buildResponse(false, "Category not found", null, HttpStatus.NOT_FOUND));
     }
 
     @PutMapping("/{categoryId}")
     public ResponseEntity<ApiResponse<CategoryDTO>> updateCategory(@PathVariable Long categoryId,
-                                                                   @RequestBody CategoryDTO dto) {
-        CategoryDTO updatedCategory = categoryService.updateCategory(categoryId, dto);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Category updated successfully", updatedCategory, HttpStatus.OK.value()));
+                                                                   @RequestBody CategoryDTO dto,
+                                                                   Authentication auth) {
+        CategoryDTO updatedCategory = categoryService.updateCategory(
+                categoryId,
+                new CategoryDTO(dto.categoryId(), dto.categoryName(), auth.getName())
+        );
+        return buildResponse(true, "Category updated successfully", updatedCategory, HttpStatus.OK);
     }
 
     @DeleteMapping("/{categoryId}")
-    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable Long categoryId) {
-        categoryService.deleteCategory(categoryId);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Category deleted successfully", null, HttpStatus.OK.value()));
+    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable Long categoryId, Authentication auth) {
+        // Pass logged-in user to service for ownership check
+        categoryService.deleteCategory(categoryId, auth.getName());
+        return buildResponse(true, "Category deleted successfully", null, HttpStatus.OK);
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CategoryDTO>>> getAllCategories() {
-        List<CategoryDTO> categories = categoryService.getAllCategories();
-        return ResponseEntity.ok(new ApiResponse<>(true, "Categories retrieved successfully", categories, HttpStatus.OK.value()));
+    public ResponseEntity<ApiResponse<List<CategoryDTO>>> getAllCategories(Authentication auth) {
+        List<CategoryDTO> categories = categoryService.getAllCategories(auth.getName());
+        return buildResponse(true, "Categories retrieved successfully", categories, HttpStatus.OK);
+    }
+
+    // --- Helper method to reduce repetition ---
+    private <T> ResponseEntity<ApiResponse<T>> buildResponse(boolean success, String message, T data, HttpStatus status) {
+        return ResponseEntity.status(status)
+                .body(new ApiResponse<>(success, message, data, status.value()));
     }
 }

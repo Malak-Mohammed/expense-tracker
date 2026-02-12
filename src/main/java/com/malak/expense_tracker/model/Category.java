@@ -2,7 +2,6 @@ package com.malak.expense_tracker.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-
 import java.util.List;
 
 @Entity
@@ -14,18 +13,24 @@ public class Category {
     private Long categoryId;
 
     @NotNull
+    @Column(nullable = false, unique = true)
     private String categoryName;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Expense> expenses;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User owner;
+
 
     public Category() {}
 
-    public Category(Long categoryId, String categoryName, List<Expense> expenses) {
-        this.categoryId = categoryId;
+    public Category(String categoryName, User owner) {
         this.categoryName = categoryName;
-        this.expenses = expenses;
+        this.owner = owner;
     }
+
 
     public Long getCategoryId() {
         return categoryId;
@@ -49,5 +54,13 @@ public class Category {
 
     public void setExpenses(List<Expense> expenses) {
         this.expenses = expenses;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 }
