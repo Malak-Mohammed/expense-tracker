@@ -1,0 +1,4 @@
+admin:
+  username: malak_admin
+  email: malak.admin@example.com
+  password: superSecret123

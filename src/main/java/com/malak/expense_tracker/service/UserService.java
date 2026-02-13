@@ -8,8 +8,10 @@ import java.util.Optional;
 
 public interface UserService {
 
-
     UserDTO registerUser(RegisterRequest request);
+
+    UserDTO assignRole(Long userId, String roleName, String currentUsername);
+
 
     Optional<UserDTO> findByUsername(String username);
 
@@ -19,9 +21,14 @@ public interface UserService {
 
     boolean existsByUsername(String username);
 
-    UserDTO updateUser(Long userId, UserDTO updatedUser);
 
-    void deleteUser(Long userId);
+    UserDTO updateUser(Long userId, UserDTO updatedUser, String currentUsername);
 
-    List<UserDTO> getAllUsers();
+    void changePassword(Long userId, String oldPassword, String newPassword, String currentUsername);
+
+
+
+    void deleteUser(Long userId, String currentUsername);
+
+    List<UserDTO> getAllUsers(String currentUsername);
 }

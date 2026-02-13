@@ -5,3 +5,18 @@ spring:
     url: jdbc:mysql://localhost:3306/expense_tracker
     username: ${DB_USER}
     password: ${DB_PASS}
+
+  profiles:
+    active:
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+    show-sql: true
+
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER

@@ -11,6 +11,7 @@ import com.malak.expense_tracker.model.User;
 import com.malak.expense_tracker.repository.RoleRepository;
 import com.malak.expense_tracker.repository.UserRepository;
 import com.malak.expense_tracker.service.UserService;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -48,12 +49,31 @@ public class UserServiceImpl implements UserService {
         user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
 
-        // Map role string to DB role
-        Role role = roleRepository.findByRoleName("ROLE_" + request.role().toUpperCase())
-                .orElseThrow(() -> new RuntimeException("Role not found: " + request.role()));
-        user.setRoles(Collections.singleton(role));
+        Role defaultRole = roleRepository.findByRoleName("ROLE_USER")
+                .orElseThrow(() -> new RuntimeException("Default role USER not found"));
+        user.setRoles(Collections.singleton(defaultRole));
 
         User savedUser = userRepository.save(user);
+        return UserMapper.toDto(savedUser);
+    }
+    @Override
+    public UserDTO assignRole(Long userId, String roleName, String currentUsername) {
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + currentUsername));
+
+        if (!currentUser.hasRole("ADMIN")) {
+            throw new AccessDeniedException("Only admins can assign roles");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+
+        Role role = roleRepository.findByRoleName("ROLE_" + roleName.toUpperCase())
+                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+
+        user.setRoles(Collections.singleton(role));
+        User savedUser = userRepository.save(user);
+
         return UserMapper.toDto(savedUser);
     }
 
@@ -78,41 +98,82 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO updateUser(Long userId, UserDTO updatedUser) {
+    public UserDTO updateUser(Long userId, UserDTO updatedUser, String currentUsername) {
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + currentUsername));
+
         User existing = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
 
-        // Check for duplicate email
+
+        if (!existing.equals(currentUser) && !currentUser.hasRole("ADMIN")) {
+            throw new AccessDeniedException("You cannot update this user");
+        }
+
+
+        if (!existing.getUsername().equals(updatedUser.username())) {
+            throw new IllegalArgumentException("Username cannot be changed once registered");
+        }
+
+
         userRepository.findByEmail(updatedUser.email())
                 .filter(user -> !user.getUserId().equals(userId))
-                .ifPresent(user -> {
-                    throw new DuplicateEmailException("Email already in use by another user");
-                });
-
-        // Check for duplicate username
-        userRepository.findByUsername(updatedUser.username())
-                .filter(user -> !user.getUserId().equals(userId))
-                .ifPresent(user -> {
-                    throw new DuplicateUsernameException("Username already in use by another user");
-                });
+                .ifPresent(user -> { throw new DuplicateEmailException("Email already in use by another user"); });
 
         existing.setEmail(updatedUser.email());
-        existing.setUsername(updatedUser.username());
 
         User savedUser = userRepository.save(existing);
         return UserMapper.toDto(savedUser);
     }
 
     @Override
-    public void deleteUser(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException("User not found with ID: " + userId);
+    public void changePassword(Long userId, String oldPassword, String newPassword, String currentUsername) {
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + currentUsername));
+
+        User existing = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+
+        if (!existing.equals(currentUser) && !currentUser.hasRole("ADMIN")) {
+            throw new AccessDeniedException("You cannot change this user's password");
         }
-        userRepository.deleteById(userId);
+
+        if (existing.equals(currentUser)) {
+            if (!passwordEncoder.matches(oldPassword, existing.getPassword())) {
+                throw new IllegalArgumentException("Old password is incorrect");
+            }
+        }
+
+
+        existing.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(existing);
     }
 
     @Override
-    public List<UserDTO> getAllUsers() {
+    public void deleteUser(Long userId, String currentUsername) {
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + currentUsername));
+
+        User existing = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+
+        // Only owner or ADMIN can delete
+        if (!existing.equals(currentUser) && !currentUser.hasRole("ADMIN")) {
+            throw new AccessDeniedException("You cannot delete this user");
+        }
+
+        userRepository.delete(existing);
+    }
+
+    @Override
+    public List<UserDTO> getAllUsers(String currentUsername) {
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + currentUsername));
+
+        if (!currentUser.hasRole("ADMIN")) {
+            throw new AccessDeniedException("You cannot view all users");
+        }
+
         return userRepository.findAll()
                 .stream()
                 .map(UserMapper::toDto)
