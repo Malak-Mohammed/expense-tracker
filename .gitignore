@@ -63,4 +63,5 @@ dist/
 # Ignore sensitive files
 src/main/java/com/malak/expense_tracker/util/KeyGenerator.java
 src/main/resources/application.yaml
+src/main/resources/application-local.yml
 
