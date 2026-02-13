@@ -13,6 +13,7 @@ import com.malak.expense_tracker.repository.CategoryRepository;
 import com.malak.expense_tracker.repository.ExpenseRepository;
 import com.malak.expense_tracker.repository.UserRepository;
 import com.malak.expense_tracker.service.ExpenseService;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -62,6 +63,11 @@ public class ExpenseServiceImpl implements ExpenseService {
         Category category = categoryRepository.findById(dto.categoryId())
                 .orElseThrow(() -> new CategoryNotFoundException("Category not found with ID: " + dto.categoryId()));
 
+
+        if (!existing.getUser().equals(user) && !user.hasRole("ADMIN")) {
+            throw new AccessDeniedException("You cannot update this expense");
+        }
+
         existing.setExpenseAmount(dto.expenseAmount());
         existing.setExpenseDate(dto.expenseDate());
         existing.setExpenseDescription(dto.expenseDescription());
@@ -77,8 +83,12 @@ public class ExpenseServiceImpl implements ExpenseService {
         Expense existing = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new ExpenseNotFoundException("Expense not found with ID: " + expenseId));
 
-        if (!existing.getUser().getUsername().equals(username)) {
-            throw new ExpenseNotFoundException("Expense not found for user: " + username);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+
+
+        if (!existing.getUser().equals(user) && !user.hasRole("ADMIN")) {
+            throw new AccessDeniedException("You cannot delete this expense");
         }
 
         expenseRepository.delete(existing);
@@ -86,8 +96,11 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     @Override
     public Optional<ExpenseDTO> getExpenseById(Long expenseId, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+
         return expenseRepository.findById(expenseId)
-                .filter(exp -> exp.getUser().getUsername().equals(username))
+                .filter(exp -> exp.getUser().equals(user) || user.hasRole("ADMIN"))
                 .map(ExpenseMapper::toDto);
     }
 
@@ -95,6 +108,15 @@ public class ExpenseServiceImpl implements ExpenseService {
     public List<ExpenseDTO> getExpensesByUsername(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+
+        // Admins can see all expenses
+        if (user.hasRole("ADMIN")) {
+            return expenseRepository.findAll()
+                    .stream()
+                    .map(ExpenseMapper::toDto)
+                    .collect(Collectors.toList());
+        }
+
         return expenseRepository.findByUser(user)
                 .stream()
                 .map(ExpenseMapper::toDto)
@@ -105,6 +127,15 @@ public class ExpenseServiceImpl implements ExpenseService {
     public List<ExpenseDTO> getExpensesByCategory(Long categoryId, String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+
+        if (user.hasRole("ADMIN")) {
+            return expenseRepository.findAll()
+                    .stream()
+                    .filter(exp -> exp.getCategory().getCategoryId().equals(categoryId))
+                    .map(ExpenseMapper::toDto)
+                    .collect(Collectors.toList());
+        }
+
         return expenseRepository.findByCategoryCategoryIdAndUser(categoryId, user)
                 .stream()
                 .map(ExpenseMapper::toDto)
@@ -115,6 +146,15 @@ public class ExpenseServiceImpl implements ExpenseService {
     public List<ExpenseDTO> getExpensesBetweenDates(String username, LocalDate start, LocalDate end) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+
+        if (user.hasRole("ADMIN")) {
+            return expenseRepository.findAll()
+                    .stream()
+                    .filter(exp -> !exp.getExpenseDate().isBefore(start) && !exp.getExpenseDate().isAfter(end))
+                    .map(ExpenseMapper::toDto)
+                    .collect(Collectors.toList());
+        }
+
         return expenseRepository.findByUserAndExpenseDateBetween(user, start, end)
                 .stream()
                 .map(ExpenseMapper::toDto)
@@ -133,7 +173,9 @@ public class ExpenseServiceImpl implements ExpenseService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
 
-        List<Expense> expenses = expenseRepository.findByUser(user);
+        List<Expense> expenses = user.hasRole("ADMIN")
+                ? expenseRepository.findAll()
+                : expenseRepository.findByUser(user);
 
         return expenses.stream()
                 .collect(Collectors.groupingBy(
